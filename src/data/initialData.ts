@@ -1,33 +1,18 @@
-import { Hero, WarHero, Place } from "../types"
+import { Hero, WarHero, Place, QuizQuestion, HistoricalEvent } from "../types"
 
-export const INITIAL_HEROES: Hero[] = []
+// Импортируем данные напрямую из папки data в корне проекта
+// Vite позволяет импортировать JSON как объекты
+import heroesData from "../../data/storage/heroes.json"
+import warHeroesData from "../../data/storage/warHeroes.json"
+import placesData from "../../data/storage/places.json"
+import quizData from "../../data/storage/quiz.json"
+import timelineData from "../../data/storage/timeline.json"
 
-export const INITIAL_WAR_HEROES: WarHero[] = []
-
-export const INITIAL_PLACES: Place[] = []
-
-import { QuizQuestion, HistoricalEvent } from "../types"
-export const INITIAL_QUIZ: QuizQuestion[] = [
-    {
-        id: 1,
-        question: "У якім годзе Францыск Скарына надрукаваў сваю першую кнігу?",
-        options: ["1517", "1410", "1569", "1588"],
-        correctAnswer: 0,
-        explanation: "6 жніўня 1517 года Францыск Скарына выдаў у Празе 'Псалтыр' — першую друкаваную кнігу на старабеларускай мове.",
-    },
-    {
-        id: 2,
-        question: "Што такое 'Слуцкі пояс'?",
-        options: [
-            "Від старажытнай зброі",
-            "Элемент мужчынскага касцюма шляхты",
-            "Назва ракі ў Слуцку",
-            "Грашовая адзінка ВКЛ",
-        ],
-        correctAnswer: 1,
-        explanation: "Слуцкі пояс — элемент мужчынскага касцюма Вялікага княства Літоўскага, сімвал шляхецкай годнасці і багацця.",
-    },
-    // ... we can migrate other questions here if needed for initial seed or keep it minimal
-]
-
-export const INITIAL_EVENTS: HistoricalEvent[] = []
+export const INITIAL_HEROES: Hero[] = heroesData as Hero[]
+export const INITIAL_WAR_HEROES: WarHero[] = warHeroesData as WarHero[]
+export const INITIAL_PLACES: Place[] = placesData as Place[]
+export const INITIAL_QUIZ: QuizQuestion[] = (quizData as any[]).map(q => ({
+    ...q,
+    // Убеждаемся, что тип соответствует QuizQuestion
+})) as QuizQuestion[]
+export const INITIAL_EVENTS: HistoricalEvent[] = timelineData as HistoricalEvent[]

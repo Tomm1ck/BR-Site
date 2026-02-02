@@ -37,57 +37,25 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const [events, setEvents] = useState<HistoricalEvent[]>(INITIAL_EVENTS)
     const [isInitialized, setIsInitialized] = useState(false)
 
-    // Load from Server on mount
+    // Load from Config Files on mount
     useEffect(() => {
-        const fetchData = async () => {
+        const fetchData = () => {
+            // Priority: LocalStorage (if edits were made) -> Config Files (Source of truth)
             try {
-                const [heroesRes, warHeroesRes, placesRes, quizRes, eventsRes] = await Promise.all([
-                    fetch('http://localhost:3001/api/data/heroes'),
-                    fetch('http://localhost:3001/api/data/warHeroes'),
-                    fetch('http://localhost:3001/api/data/places'),
-                    fetch('http://localhost:3001/api/data/quiz'),
-                    fetch('http://localhost:3001/api/data/timeline')
-                ]);
+                const localHeroes = localStorage.getItem('data_heroes');
+                const localWarHeroes = localStorage.getItem('data_warHeroes');
+                const localPlaces = localStorage.getItem('data_places');
+                const localQuiz = localStorage.getItem('data_quiz');
+                const localEvents = localStorage.getItem('data_timeline');
 
-                const heroesData = await heroesRes.json();
-                const warHeroesData = await warHeroesRes.json();
-                const placesData = await placesRes.json();
-                const quizData = await quizRes.json();
-                const eventsData = await eventsRes.json();
-
-                if (heroesData.length > 0) setHeroes(heroesData);
-                else {
-                    setHeroes(INITIAL_HEROES);
-                    saveToServer('heroes', INITIAL_HEROES);
-                }
-
-                if (warHeroesData.length > 0) setWarHeroes(warHeroesData);
-                else {
-                    setWarHeroes(INITIAL_WAR_HEROES);
-                    saveToServer('warHeroes', INITIAL_WAR_HEROES);
-                }
-
-                if (placesData.length > 0) setPlaces(placesData);
-                else {
-                    setPlaces(INITIAL_PLACES);
-                    saveToServer('places', INITIAL_PLACES);
-                }
-
-                if (quizData.length > 0) setQuiz(quizData);
-                else {
-                    setQuiz(INITIAL_QUIZ);
-                    saveToServer('quiz', INITIAL_QUIZ);
-                }
-
-                if (eventsData.length > 0) setEvents(eventsData);
-                else {
-                    setEvents(INITIAL_EVENTS);
-                    saveToServer('timeline', INITIAL_EVENTS);
-                }
+                setHeroes(localHeroes ? JSON.parse(localHeroes) : INITIAL_HEROES);
+                setWarHeroes(localWarHeroes ? JSON.parse(localWarHeroes) : INITIAL_WAR_HEROES);
+                setPlaces(localPlaces ? JSON.parse(localPlaces) : INITIAL_PLACES);
+                setQuiz(localQuiz ? JSON.parse(localQuiz) : INITIAL_QUIZ);
+                setEvents(localEvents ? JSON.parse(localEvents) : INITIAL_EVENTS);
 
             } catch (error) {
                 console.error("Error loading data:", error);
-                // Fallback
                 setHeroes(INITIAL_HEROES);
                 setWarHeroes(INITIAL_WAR_HEROES);
                 setPlaces(INITIAL_PLACES);
@@ -97,29 +65,27 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             setIsInitialized(true);
         };
 
+
         fetchData();
     }, [])
 
-    const saveToServer = async (filename: string, data: any) => {
+
+    const saveToLocalStorage = (filename: string, data: any) => {
         try {
-            await fetch(`http://localhost:3001/api/data/${filename}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data),
-            });
+            localStorage.setItem(`data_${filename}`, JSON.stringify(data));
         } catch (error) {
-            console.error(`Error saving ${filename}:`, error);
+            console.error(`Error saving ${filename} to localStorage:`, error);
         }
     };
 
+
     // Save watchers
-    useEffect(() => { if (isInitialized) saveToServer('heroes', heroes); }, [heroes, isInitialized])
-    useEffect(() => { if (isInitialized) saveToServer('warHeroes', warHeroes); }, [warHeroes, isInitialized])
-    useEffect(() => { if (isInitialized) saveToServer('places', places); }, [places, isInitialized])
-    useEffect(() => { if (isInitialized) saveToServer('quiz', quiz); }, [quiz, isInitialized])
-    useEffect(() => { if (isInitialized) saveToServer('timeline', events); }, [events, isInitialized])
+    useEffect(() => { if (isInitialized) saveToLocalStorage('heroes', heroes); }, [heroes, isInitialized])
+    useEffect(() => { if (isInitialized) saveToLocalStorage('warHeroes', warHeroes); }, [warHeroes, isInitialized])
+    useEffect(() => { if (isInitialized) saveToLocalStorage('places', places); }, [places, isInitialized])
+    useEffect(() => { if (isInitialized) saveToLocalStorage('quiz', quiz); }, [quiz, isInitialized])
+    useEffect(() => { if (isInitialized) saveToLocalStorage('timeline', events); }, [events, isInitialized])
+
 
     // Actions
     const updateHero = (oldHero: Hero, newHero: Hero) => setHeroes(prev => prev.map(h => (h.id === oldHero.id ? newHero : h)))
@@ -149,12 +115,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         setPlaces(INITIAL_PLACES);
         setQuiz(INITIAL_QUIZ);
         setEvents(INITIAL_EVENTS);
-        saveToServer('heroes', INITIAL_HEROES);
-        saveToServer('warHeroes', INITIAL_WAR_HEROES);
-        saveToServer('places', INITIAL_PLACES);
-        saveToServer('quiz', INITIAL_QUIZ);
-        saveToServer('timeline', INITIAL_EVENTS);
+        saveToLocalStorage('heroes', INITIAL_HEROES);
+        saveToLocalStorage('warHeroes', INITIAL_WAR_HEROES);
+        saveToLocalStorage('places', INITIAL_PLACES);
+        saveToLocalStorage('quiz', INITIAL_QUIZ);
+        saveToLocalStorage('timeline', INITIAL_EVENTS);
     }
+
 
     return (
         <DataContext.Provider value={{
